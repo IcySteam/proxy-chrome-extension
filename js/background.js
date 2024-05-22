@@ -1,3 +1,28 @@
+function generateRandomSession() {
+    // MarsProxies session ID format.
+    const SESSION_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const SESSION_ID_LENGTH = 8
+
+    let result = "";
+    let counter = 0;
+    while (counter < SESSION_ID_LENGTH) {
+        result += SESSION_ID_CHARS.charAt(Math.floor(Math.random() * SESSION_ID_CHARS.length));
+        counter += 1;
+    }
+
+    return result;
+}
+
+function getPasswordWithSession(proxyPassword, proxySession) {
+    // MarsProxies session ID format.
+    const SESSION_ID_PREFIX = "_session-"
+
+    if (proxySession.length !== 0) {
+        proxyPassword += SESSION_ID_PREFIX + proxySession;
+    }
+    return proxyPassword;
+}
+
 var Proxy = function () {
 
         var storedData = {};
@@ -101,9 +126,10 @@ var Proxy = function () {
             }
         ;
 
-        var init = function () {
+        var initHelper = function() {
             if (Object.keys(storedData).length !== 0) {
-                Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername, storedData.proxyPassword);
+                Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
+                    getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));
             }
             chrome.storage.onChanged.addListener(function (changes, namespace) {
                 // for (k in changes)
@@ -111,10 +137,27 @@ var Proxy = function () {
                     null,
                     function (items) {
                         storedData = items
-                        Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername, storedData.proxyPassword);
+                        Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
+                            getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));
                     }
                 );
             });
+        }
+
+        var init = function () {
+            if (storedData.proxyRandomizeSessionOnExtensionLoad) {
+                console.log("Randomizing session ID on extension load."
+                    + " Current session ID: " + storedData.proxySession);
+                const newSessionId = generateRandomSession();
+                chrome.storage.sync.set({
+                    proxySession: newSessionId
+                }, function () {
+                    console.log("New session ID: " + newSessionId);
+                    initHelper();
+                });
+            } else {
+                initHelper()
+            }
         };
 
         this.run = function () {
@@ -192,7 +235,6 @@ var ProxyByURL = function () {
 
         chrome.tabs.onUpdated.addListener(function (tab, info) {
             if (tab === tabId && info.status === "complete") {
-                ProxyByURL.prototype.setProxy();
                 console.log("Completed loading URL: " + url);
             }
         });

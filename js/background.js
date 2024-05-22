@@ -126,7 +126,7 @@ var Proxy = function () {
             }
         ;
 
-        var initHelper = function() {
+        var initHelper = function () {
             if (Object.keys(storedData).length !== 0) {
                 Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
                     getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));

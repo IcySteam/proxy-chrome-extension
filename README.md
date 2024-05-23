@@ -1,3 +1,11 @@
+About this fork: [IcySteam/proxy-chrome-extension](https://github.com/IcySteam/proxy-login-automator)
+----------------------
+
+This repository is a fork of [incu6us/proxy-chrome-extension](https://github.com/incu6us/proxy-chrome-extension)
+to automate the use of random session IDs when connecting to MarsProxies servers.
+
+It also contains [bug](https://github.com/incu6us/proxy-chrome-extension/commit/553d1921375fe05937b13f90d86f9b1fe2bc481b) fixes for the original repository.
+
 proxy-chrome-extension
 ----------------------
 

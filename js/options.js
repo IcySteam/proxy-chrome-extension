@@ -1,8 +1,8 @@
-function generateRandomSession() {
-    // MarsProxies session ID format.
-    const SESSION_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
-    const SESSION_ID_LENGTH = 8
+// MarsProxies session ID format.
+const SESSION_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
+const SESSION_ID_LENGTH = 8
 
+function generateRandomSession() {
     let result = "";
     let counter = 0;
     while (counter < SESSION_ID_LENGTH) {

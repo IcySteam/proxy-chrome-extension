@@ -1,8 +1,9 @@
-function generateRandomSession() {
-    // MarsProxies session ID format.
-    const SESSION_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
-    const SESSION_ID_LENGTH = 8
+// MarsProxies session ID format.
+const SESSION_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
+const SESSION_ID_LENGTH = 8
+const SESSION_ID_PREFIX = "_session-"
 
+function generateRandomSession() {
     let result = "";
     let counter = 0;
     while (counter < SESSION_ID_LENGTH) {
@@ -14,9 +15,6 @@ function generateRandomSession() {
 }
 
 function getPasswordWithSession(proxyPassword, proxySession) {
-    // MarsProxies session ID format.
-    const SESSION_ID_PREFIX = "_session-"
-
     if (proxySession.length !== 0) {
         proxyPassword += SESSION_ID_PREFIX + proxySession;
     }
@@ -101,6 +99,13 @@ var Proxy = function () {
             debugProxySettings(proxyUsername, proxyPassword);
         };
 
+        var setStoredDataProxy = function () {
+            if (Object.keys(storedData).length !== 0) {
+                Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
+                    getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));
+            }
+        }
+
         var debugProxySettings = function (proxyUsername, proxyPassword) {
                 chrome.proxy.settings.get(
                     {'incognito': false},
@@ -126,11 +131,22 @@ var Proxy = function () {
             }
         ;
 
-        var initHelper = function () {
-            if (Object.keys(storedData).length !== 0) {
-                Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
-                    getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));
+        var init = function () {
+            if (storedData.proxyRandomizeSessionOnExtensionLoad) {
+                console.log("Randomizing session ID on extension load.");
+                console.log("Current session ID: " + storedData.proxySession);
+                const newSessionId = generateRandomSession();
+                chrome.storage.sync.set({
+                    proxySession: newSessionId
+                }, function () {
+                    console.log("New session ID: " + newSessionId);
+                });
+            } else {
+                setStoredDataProxy()
             }
+        };
+
+        this.run = function () {
             chrome.storage.onChanged.addListener(function (changes, namespace) {
                 // for (k in changes)
                 chrome.storage.sync.get(
@@ -142,25 +158,7 @@ var Proxy = function () {
                     }
                 );
             });
-        }
 
-        var init = function () {
-            if (storedData.proxyRandomizeSessionOnExtensionLoad) {
-                console.log("Randomizing session ID on extension load."
-                    + " Current session ID: " + storedData.proxySession);
-                const newSessionId = generateRandomSession();
-                chrome.storage.sync.set({
-                    proxySession: newSessionId
-                }, function () {
-                    console.log("New session ID: " + newSessionId);
-                    initHelper();
-                });
-            } else {
-                initHelper()
-            }
-        };
-
-        this.run = function () {
             chrome.storage.sync.get(
                 null,
                 function (items) {
@@ -174,6 +172,8 @@ var Proxy = function () {
 
 
 var ProxyByURL = function () {
+
+    var storedData = {};
 
     ProxyByURL.prototype = Object.create(Proxy.prototype);
 
@@ -222,11 +222,11 @@ var ProxyByURL = function () {
         chrome.webRequest.onBeforeRequest.addListener(function (details) {
             if (details.frameId === 0 && details.type === "main_frame") {
                 url = details.url;
-                tabId = details.tabId;
                 var urlParams = parseQueryString(url);
                 if (urlParams !== undefined && urlParams.proxyAddress !== undefined) {
                     ProxyByURL.prototype.setProxy(urlParams.proxyAddress, urlParams.proxyUsername, urlParams.proxyPassword);
                     console.log("URL: " + url);
+                    tabId = details.tabId;
                     return {redirectUrl: removeProxyUrlParams(proxyParams, url)};
                 }
 
@@ -235,7 +235,18 @@ var ProxyByURL = function () {
 
         chrome.tabs.onUpdated.addListener(function (tab, info) {
             if (tab === tabId && info.status === "complete") {
-                console.log("Completed loading URL: " + url);
+                console.log("Completed loading URL: " + url + " with proxy parameters.");
+                chrome.storage.sync.get(
+                    null,
+                    function (items) {
+                        storedData = items
+                        if (Object.keys(storedData).length !== 0) {
+                            Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
+                                getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));
+                        }
+                    }
+                );
+                tabId = undefined;
             }
         });
     };

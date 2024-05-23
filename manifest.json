@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Proxy",
+  "name": "MarsProxies Session Randomizer Extension",
   "version": "28",
   "options_page": "options.html",
   "options_ui": {

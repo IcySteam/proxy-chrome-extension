@@ -10,7 +10,6 @@ function generateRandomSession() {
         result += SESSION_ID_CHARS.charAt(Math.floor(Math.random() * SESSION_ID_CHARS.length));
         counter += 1;
     }
-
     return result;
 }
 
@@ -173,8 +172,6 @@ var Proxy = function () {
 
 var ProxyByURL = function () {
 
-    var storedData = {};
-
     ProxyByURL.prototype = Object.create(Proxy.prototype);
 
     var parseQueryString = function (url) {
@@ -238,8 +235,7 @@ var ProxyByURL = function () {
                 console.log("Completed loading URL: " + url + " with proxy parameters.");
                 chrome.storage.sync.get(
                     null,
-                    function (items) {
-                        storedData = items
+                    function (storedData) {
                         if (Object.keys(storedData).length !== 0) {
                             Proxy.prototype.setProxy(storedData.proxyAddress, storedData.proxyUsername,
                                 getPasswordWithSession(storedData.proxyPassword, storedData.proxySession));

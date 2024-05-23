@@ -9,7 +9,6 @@ function generateRandomSession() {
         result += SESSION_ID_CHARS.charAt(Math.floor(Math.random() * SESSION_ID_CHARS.length));
         counter += 1;
     }
-
     return result;
 }
 

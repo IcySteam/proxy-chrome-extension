@@ -83,6 +83,11 @@ var Proxy = function () {
                     function () {
                         if (proxyAddress !== "" && proxyUsername !== "") {
                             if (chrome.webRequest.onAuthRequired) {
+                                // Replacing the event listener doesn't immediately result in a new session / IP address;
+                                // to refersh the session / IP address, reload the extension and clear the cookies.
+                                //
+                                // This might be caused by how Chrome handles HTTP Keep-Alive when connecting to proxy servers,
+                                // and how MarsProxies handles previously established connections.
                                 chrome.webRequest.onAuthRequired.addListener(function (details) {
                                     return authCredentials(proxyUsername.trim(), proxyPassword.trim());
                                 }, {urls: ['<all_urls>']}, ['blocking']);

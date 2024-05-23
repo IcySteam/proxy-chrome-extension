@@ -21,6 +21,7 @@
     "scripts":
     [
       "js/background.js"
-    ]
+    ],
+    "persistent": true
   }
 }

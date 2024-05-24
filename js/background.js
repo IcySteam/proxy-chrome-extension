@@ -78,27 +78,30 @@ var Proxy = function () {
             if (proxyAddress === undefined || proxyAddress.trim() === "") {
                 chrome.proxy.settings.set({value: config(), scope: 'regular'});
             } else {
-                chrome.proxy.settings.set(
-                    {value: config(proxyAddress), scope: 'regular'},
-                    function () {
-                        if (proxyAddress !== "" && proxyUsername !== "") {
-                            if (chrome.webRequest.onAuthRequired) {
-                                // Replacing the event listener doesn't immediately result in a new session / IP address;
-                                // to refersh the session / IP address, reload the extension and clear the cookies.
-                                //
-                                // This might be caused by how Chrome handles HTTP Keep-Alive when connecting to proxy servers,
-                                // and how MarsProxies handles previously established connections.
-                                chrome.webRequest.onAuthRequired.addListener(function (details) {
-                                    return authCredentials(proxyUsername.trim(), proxyPassword.trim());
-                                }, {urls: ['<all_urls>']}, ['blocking']);
-                            } else {
-                                chrome.webRequest.onBeforeSendHeaders.addListener(function (details) {
-                                    return credentialsToHeader(details, proxyUsername.trim(), proxyPassword.trim());
-                                }, {urls: ['<all_urls>']}, ['blocking', 'requestHeaders']);
-                            }
-                        }
+                // Even if we ensure to add the event listener before setting the proxy, Chrome still prompts
+                // for proxy authentication credentials when starting up if 1) proxy settings persist from the
+                // last browsing session, and 2) a tab containing a website is selected, as Chrome immediately
+                // starts loading the page before the event listener is added.
+                //
+                // To ensure Chrome doesn't prompt for credentials when starting up, reset proxy settings
+                // temporarily before exiting.
+                if (proxyAddress !== "" && proxyUsername !== "") {
+                    if (chrome.webRequest.onAuthRequired) {
+                        // Replacing the event listener doesn't immediately result in a new session / IP address;
+                        // to refersh the session / IP address, reload the extension and clear the cookies.
+                        //
+                        // This might be caused by how Chrome handles HTTP Keep-Alive when connecting to proxy servers,
+                        // and how MarsProxies handles previously established connections.
+                        chrome.webRequest.onAuthRequired.addListener(function (details) {
+                            return authCredentials(proxyUsername.trim(), proxyPassword.trim());
+                        }, {urls: ['<all_urls>']}, ['blocking']);
+                    } else {
+                        chrome.webRequest.onBeforeSendHeaders.addListener(function (details) {
+                            return credentialsToHeader(details, proxyUsername.trim(), proxyPassword.trim());
+                        }, {urls: ['<all_urls>']}, ['blocking', 'requestHeaders']);
                     }
-                );
+                }
+                chrome.proxy.settings.set({value: config(proxyAddress), scope: 'regular'});
             }
             debugProxySettings(proxyUsername, proxyPassword);
         };

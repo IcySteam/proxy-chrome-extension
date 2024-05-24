@@ -37,6 +37,22 @@ function clear() {
     document.getElementById("proxyRandomizeSessionOnExtensionLoad").checked = true;
 }
 
+function reset() {
+    chrome.proxy.settings.clear({ scope: 'regular' }, function () {
+        chrome.proxy.settings.get(
+            {'incognito': false},
+            function (config) {
+                console.log("Proxy settings: " + JSON.stringify(config));
+                var status = document.getElementById("status");
+                status.textContent = "Proxy settings have been reset (temporarily)"
+                setTimeout(function () {
+                    status.textContent = "";
+                }, 2500)
+            }
+        );
+    });
+}
+
 function randomize() {
     document.getElementById("proxySession").value = generateRandomSession();
 }
@@ -63,4 +79,5 @@ function restore() {
 document.addEventListener("DOMContentLoaded", restore);
 document.getElementById("clear").addEventListener("click", clear);
 document.getElementById("save").addEventListener("click", save);
+document.getElementById("reset").addEventListener("click", reset);
 document.getElementById("randomize").addEventListener("click", randomize);

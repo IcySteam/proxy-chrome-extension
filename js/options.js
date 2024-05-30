@@ -53,6 +53,10 @@ function reset() {
     });
 }
 
+function reload() {
+    chrome.runtime.reload();
+}
+
 function randomize() {
     document.getElementById("proxySession").value = generateRandomSession();
 }
@@ -80,4 +84,5 @@ document.addEventListener("DOMContentLoaded", restore);
 document.getElementById("clear").addEventListener("click", clear);
 document.getElementById("save").addEventListener("click", save);
 document.getElementById("reset").addEventListener("click", reset);
+document.getElementById("reload").addEventListener("click", reload);
 document.getElementById("randomize").addEventListener("click", randomize);
